@@ -5,7 +5,7 @@ export const INITIAL_COLLEGE_SETTINGS: CollegeSettings = {
   collegeName: 'Gonna Institute of Information Technology and Sciences',
   collegeCode: 'GIITS',
   tagline: 'Approved by AICTE, Affiliated to JNTUGV | Visakhapatnam, Andhra Pradesh',
-  logoUrl: '', // Allow principal to upload custom logo
+  logoUrl: '/logo.png', // Official Gonna Institute of Information Technology and Sciences logo
   address: 'Gonnavanipalem, Aganampudi, Visakhapatnam - 530053, Andhra Pradesh',
   academicYear: '2026-2027',
   currentSemester: 'EVEN',

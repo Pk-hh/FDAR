@@ -79,9 +79,17 @@ export const Header: React.FC<HeaderProps> = ({ onOpenNotifications, onOpenRoleS
       <div className="px-4 py-2.5 flex items-center justify-between">
         {/* Brand & Subtitle */}
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-blue-600 flex items-center justify-center shadow-inner font-black text-white text-base tracking-tighter shrink-0 border border-blue-400/30">
-            GIITS
-          </div>
+          {settings?.logoUrl ? (
+            <img
+              src={settings.logoUrl}
+              alt={settings.collegeName || 'GIITS'}
+              className="w-10 h-10 rounded-lg object-contain bg-white/95 p-0.5 border border-slate-700 shadow-sm shrink-0"
+            />
+          ) : (
+            <div className="w-9 h-9 rounded-lg bg-blue-600 flex items-center justify-center shadow-inner font-black text-white text-base tracking-tighter shrink-0 border border-blue-400/30">
+              GIITS
+            </div>
+          )}
           <div>
             <h1 className="text-sm sm:text-base font-bold leading-tight flex items-center gap-2">
               <span>Faculty Daily Activity Register</span>

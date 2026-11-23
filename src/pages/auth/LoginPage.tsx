@@ -68,9 +68,19 @@ export const LoginPage: React.FC = () => {
       <div className="max-w-md w-full space-y-6 relative z-10">
         {/* Institutional Crest Branding */}
         <div className="text-center space-y-2">
-          <div className="inline-flex w-14 h-14 rounded-2xl bg-blue-600 text-white items-center justify-center font-black text-2xl shadow-xl shadow-blue-500/20 border-2 border-blue-400/40">
-            GIITS
-          </div>
+          {settings?.logoUrl ? (
+            <div className="inline-block p-1.5 rounded-2xl bg-white shadow-xl shadow-blue-500/10 border border-slate-700">
+              <img
+                src={settings.logoUrl}
+                alt={settings.collegeName || 'GIITS'}
+                className="w-16 h-16 object-contain"
+              />
+            </div>
+          ) : (
+            <div className="inline-flex w-14 h-14 rounded-2xl bg-blue-600 text-white items-center justify-center font-black text-2xl shadow-xl shadow-blue-500/20 border-2 border-blue-400/40">
+              GIITS
+            </div>
+          )}
           <div>
             <h1 className="text-lg sm:text-xl font-black text-white tracking-tight">
               {settings?.collegeName || 'GONNA INSTITUTE OF INFORMATION TECHNOLOGY AND SCIENCES'}
