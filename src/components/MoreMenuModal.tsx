@@ -42,6 +42,8 @@ export const MoreMenuModal: React.FC<MoreMenuModalProps> = ({
       case 'principal':
         return [
           { id: 'faculty_all', label: 'All Faculty Directory', icon: Users },
+          { id: 'timetables', label: 'Timetable & Allocations', icon: Clock },
+          { id: 'leaves', label: 'Leave & OD Sanctions', icon: UserCheck },
           { id: 'syllabus', label: 'Syllabus & NAAC CO Tracker', icon: Building },
           { id: 'substitutions', label: 'Substitution Oversight', icon: UserCheck },
           { id: 'timings', label: 'College Timings & Calendar', icon: Clock },

@@ -11,6 +11,10 @@ export const INITIAL_COLLEGE_SETTINGS: CollegeSettings = {
   currentSemester: 'EVEN',
   timings: DEFAULT_TIMINGS,
   reminderTime: '16:00',
+  attendanceWarningThreshold: 75,
+  campusLatitude: 17.6868,
+  campusLongitude: 83.2185,
+  campusRadiusMeters: 1500,
   updatedAt: new Date().toISOString(),
   updatedBy: 'pradeep4045t7@gmail.com',
 };

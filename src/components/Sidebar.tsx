@@ -42,6 +42,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
           { id: 'departments', label: 'Departments & HODs', icon: Building },
           { id: 'monitoring', label: 'Live Monitoring Matrix', icon: CheckCircle2 },
           { id: 'faculty_all', label: 'All Faculty Directory', icon: Users },
+          { id: 'timetables', label: 'Timetable & Allocations', icon: Clock },
+          { id: 'leaves', label: 'Leave & OD Sanctions', icon: UserCheck },
           { id: 'syllabus', label: 'Syllabus & NAAC Tracker', icon: BookOpen },
           { id: 'substitutions', label: 'Substitution Oversight', icon: UserCheck },
           { id: 'timings', label: 'College Timings & Calendar', icon: Clock },

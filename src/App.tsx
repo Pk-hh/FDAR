@@ -77,6 +77,10 @@ export const App: React.FC = () => {
           );
         case 'faculty_all':
           return <FacultyManagement />;
+        case 'timetables':
+          return <TimetableManagement />;
+        case 'leaves':
+          return <LeaveManagement />;
         case 'syllabus':
           return <SyllabusCoveragePage />;
         case 'substitutions':

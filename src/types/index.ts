@@ -302,6 +302,10 @@ export interface CollegeSettings {
   currentSemester: 'ODD' | 'EVEN';
   timings: CollegeTiming[];
   reminderTime: string; // e.g. "16:00"
+  attendanceWarningThreshold?: number; // e.g. 75
+  campusLatitude?: number; // e.g. 17.6868
+  campusLongitude?: number; // e.g. 83.2185
+  campusRadiusMeters?: number; // e.g. 1500
   updatedAt: string;
   updatedBy: string;
 }

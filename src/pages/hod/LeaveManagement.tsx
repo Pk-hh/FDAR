@@ -18,10 +18,14 @@ import {
 
 export const LeaveManagement: React.FC = () => {
   const { currentUser } = useAuth();
-  const { users, refreshAll } = useCollege();
+  const { users, departments, refreshAll } = useCollege();
 
-  const deptId = currentUser?.departmentId || 'dept_cse';
-  const deptFaculty = users.filter((u) => u.departmentId === deptId && u.role === 'faculty');
+  const isPrincipal = currentUser?.role === 'principal';
+  const [selectedDeptId, setSelectedDeptId] = useState<string>(
+    currentUser?.departmentId || departments[0]?.id || 'dept_cse'
+  );
+  const deptId = isPrincipal ? selectedDeptId : (currentUser?.departmentId || 'dept_cse');
+  const deptFaculty = users.filter((u) => u.departmentId === deptId && (u.role === 'faculty' || u.role === 'hod'));
 
   const [leaves, setLeaves] = useState<LeaveRecord[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
@@ -84,13 +88,36 @@ export const LeaveManagement: React.FC = () => {
           </p>
         </div>
 
-        <button
-          onClick={() => setModalOpen(true)}
-          className="px-4 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Record Leave / On-Duty</span>
-        </button>
+        <div className="flex items-center gap-2">
+          {isPrincipal && (
+            <div className="flex items-center gap-1.5 mr-2">
+              <span className="text-xs font-semibold text-slate-600">Department:</span>
+              <select
+                value={selectedDeptId}
+                onChange={(e) => {
+                  setSelectedDeptId(e.target.value);
+                  const facs = users.filter((u) => u.departmentId === e.target.value);
+                  if (facs.length > 0) setFormFacultyId(facs[0].uid);
+                }}
+                className="text-xs font-bold px-3 py-1.5 rounded-xl border border-slate-300 bg-slate-50 text-slate-800"
+              >
+                {departments.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.name} ({d.code})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          <button
+            onClick={() => setModalOpen(true)}
+            className="px-4 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Record Leave / On-Duty</span>
+          </button>
+        </div>
       </div>
 
       {/* Leave Records Table */}

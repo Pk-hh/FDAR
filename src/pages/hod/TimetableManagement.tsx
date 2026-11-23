@@ -19,10 +19,14 @@ import { getActivityColor } from '@/utils/activities';
 
 export const TimetableManagement: React.FC = () => {
   const { currentUser } = useAuth();
-  const { users, settings, refreshAll } = useCollege();
+  const { users, departments, settings, refreshAll } = useCollege();
 
-  const deptId = currentUser?.departmentId || 'dept_cse';
-  const deptFaculty = users.filter((u) => u.departmentId === deptId && u.role === 'faculty' && u.isActive);
+  const isPrincipal = currentUser?.role === 'principal';
+  const [selectedDeptId, setSelectedDeptId] = useState<string>(
+    currentUser?.departmentId || departments[0]?.id || 'dept_cse'
+  );
+  const deptId = isPrincipal ? selectedDeptId : (currentUser?.departmentId || 'dept_cse');
+  const deptFaculty = users.filter((u) => u.departmentId === deptId && (u.role === 'faculty' || u.role === 'hod') && u.isActive);
 
   const [activeDay, setActiveDay] = useState<'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday'>('Monday');
   const [entries, setEntries] = useState<TimetableEntry[]>([]);
@@ -187,7 +191,28 @@ export const TimetableManagement: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {isPrincipal && (
+            <div className="flex items-center gap-1.5 mr-2">
+              <span className="text-xs font-semibold text-slate-600">Department:</span>
+              <select
+                value={selectedDeptId}
+                onChange={(e) => {
+                  setSelectedDeptId(e.target.value);
+                  const facs = users.filter((u) => u.departmentId === e.target.value && u.isActive);
+                  if (facs.length > 0) setFormFacultyId(facs[0].uid);
+                }}
+                className="text-xs font-bold px-3 py-1.5 rounded-xl border border-slate-300 bg-slate-50 text-slate-800"
+              >
+                {departments.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.name} ({d.code})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <button
             onClick={() => setSubModalOpen(true)}
             className="px-3 py-1.5 rounded-xl border border-blue-300 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-semibold flex items-center gap-1.5 transition"

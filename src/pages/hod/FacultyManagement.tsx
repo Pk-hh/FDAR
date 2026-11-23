@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCollege } from '@/contexts/CollegeContext';
 import { StorageService } from '@/services/storageService';
-import { User, Designation } from '@/types';
+import { User, Designation, UserRole } from '@/types';
 import {
   Users,
   UserPlus,
@@ -48,6 +48,7 @@ export const FacultyManagement: React.FC = () => {
     fullName: '',
     email: '',
     departmentId: isPrincipal ? 'dept_cse' : deptId,
+    role: 'faculty' as UserRole,
     designation: 'Assistant Professor' as Designation,
     qualification: 'M.Tech',
     mobileNumber: '',
@@ -82,6 +83,7 @@ export const FacultyManagement: React.FC = () => {
       fullName: user.fullName,
       email: user.email,
       departmentId: user.departmentId,
+      role: user.role,
       designation: user.designation,
       qualification: user.qualification,
       mobileNumber: user.mobileNumber,
@@ -105,12 +107,13 @@ export const FacultyManagement: React.FC = () => {
 
     try {
       const dept = departments.find((d) => d.id === formData.departmentId);
+      const chosenRole = isPrincipal ? formData.role : (editingUser ? editingUser.role : 'faculty');
       const userToSave: User = {
         uid: editingUser ? editingUser.uid : 'user_' + Date.now(),
         employeeId: formData.employeeId.trim(),
         fullName: formData.fullName.trim(),
         email: formData.email.trim().toLowerCase(),
-        role: 'faculty',
+        role: chosenRole,
         departmentId: formData.departmentId,
         departmentName: dept?.name || 'Academic Department',
         designation: formData.designation,
@@ -126,6 +129,14 @@ export const FacultyManagement: React.FC = () => {
       };
 
       await StorageService.saveUser(userToSave, currentUser.uid);
+
+      // If assigned as HOD by Principal, link to department
+      if (chosenRole === 'hod' && dept) {
+        await StorageService.saveDepartment(
+          { ...dept, hodId: userToSave.uid, hodName: userToSave.fullName },
+          currentUser.uid
+        );
+      }
       await refreshAll();
       setAddModalOpen(false);
       setEditingUser(null);
@@ -504,6 +515,22 @@ export const FacultyManagement: React.FC = () => {
                     ))}
                   </select>
                 </div>
+
+                {isPrincipal && (
+                  <div>
+                    <label className="block font-semibold text-slate-700 mb-1">
+                      Account Role <span className="text-amber-600 font-bold">(Admin Assignable)</span>
+                    </label>
+                    <select
+                      value={formData.role}
+                      onChange={(e) => setFormData({ ...formData, role: e.target.value as UserRole })}
+                      className="w-full px-3 py-1.5 rounded-lg border border-amber-300 text-xs bg-amber-50/60 font-bold text-slate-800"
+                    >
+                      <option value="faculty">Faculty Member</option>
+                      <option value="hod">Head of Department (HOD)</option>
+                    </select>
+                  </div>
+                )}
 
                 <div>
                   <label className="block font-semibold text-slate-700 mb-1">Date of Joining</label>
