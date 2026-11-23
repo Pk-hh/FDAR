@@ -16,6 +16,7 @@ import {
   ClipboardList,
   Sparkles,
   UserCheck,
+  Award,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -41,6 +42,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
           { id: 'departments', label: 'Departments & HODs', icon: Building },
           { id: 'monitoring', label: 'Live Monitoring Matrix', icon: CheckCircle2 },
           { id: 'faculty_all', label: 'All Faculty Directory', icon: Users },
+          { id: 'syllabus', label: 'Syllabus & NAAC Tracker', icon: BookOpen },
+          { id: 'substitutions', label: 'Substitution Oversight', icon: UserCheck },
           { id: 'timings', label: 'College Timings & Calendar', icon: Clock },
           { id: 'reports', label: 'Consolidated Reports', icon: FileSpreadsheet },
           { id: 'announcements', label: 'Announcements', icon: Bell },
@@ -54,7 +57,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
           { id: 'matrix', label: 'Daily Activity Matrix', icon: ClipboardList },
           { id: 'review', label: 'Review & Approvals', icon: CheckCircle2 },
           { id: 'my_register', label: 'My Daily Register', icon: BookOpen },
-          { id: 'timetables', label: 'Timetable & Substitutions', icon: Clock },
+          { id: 'timetables', label: 'Timetable & Allocations', icon: Clock },
+          { id: 'substitutions', label: 'Substitution Exchange', icon: UserCheck },
+          { id: 'syllabus', label: 'Syllabus & CO Coverage', icon: Award },
           { id: 'leaves', label: 'Leave & On-Duty Records', icon: UserCheck },
           { id: 'reports', label: 'Department Reports', icon: FileSpreadsheet },
           { id: 'announcements', label: 'Announcements', icon: Bell },
@@ -65,6 +70,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
           { id: 'home', label: 'Personal Dashboard', icon: LayoutDashboard },
           { id: 'daily_log', label: 'Daily 7-Period Register', icon: BookOpen },
           { id: 'timetable', label: 'My Timetable', icon: Calendar },
+          { id: 'substitutions', label: 'Substitution Requests', icon: UserCheck },
+          { id: 'syllabus', label: 'Syllabus & CO Tracker', icon: Award },
           { id: 'history', label: 'Register History & Remarks', icon: History },
           { id: 'reports', label: 'My Activity Reports', icon: FileSpreadsheet },
           { id: 'announcements', label: 'Announcements', icon: Bell },

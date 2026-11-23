@@ -31,6 +31,8 @@ import { CollegeSettingsPage } from '@/pages/principal/CollegeSettingsPage';
 // Shared Pages
 import { ReportsPage } from '@/pages/reports/ReportsPage';
 import { AnnouncementsPage } from '@/pages/announcements/AnnouncementsPage';
+import { SyllabusCoveragePage } from '@/pages/analytics/SyllabusCoveragePage';
+import { SubstitutionMarketplace } from '@/pages/faculty/SubstitutionMarketplace';
 
 export const App: React.FC = () => {
   const { currentUser, role, isAuthenticated, isLoading } = useAuth();
@@ -75,6 +77,10 @@ export const App: React.FC = () => {
           );
         case 'faculty_all':
           return <FacultyManagement />;
+        case 'syllabus':
+          return <SyllabusCoveragePage />;
+        case 'substitutions':
+          return <SubstitutionMarketplace />;
         case 'timings':
           return <CollegeTimingsSettings />;
         case 'reports':
@@ -118,6 +124,10 @@ export const App: React.FC = () => {
           return <DailyRegisterForm />;
         case 'timetables':
           return <TimetableManagement />;
+        case 'substitutions':
+          return <SubstitutionMarketplace />;
+        case 'syllabus':
+          return <SyllabusCoveragePage />;
         case 'leaves':
           return <LeaveManagement />;
         case 'reports':
@@ -142,6 +152,10 @@ export const App: React.FC = () => {
         return <DailyRegisterForm onSuccessSubmit={() => setCurrentTab('home')} />;
       case 'timetable':
         return <FacultyTimetable />;
+      case 'substitutions':
+        return <SubstitutionMarketplace />;
+      case 'syllabus':
+        return <SyllabusCoveragePage />;
       case 'history':
         return <FacultyHistory />;
       case 'reports':

@@ -44,6 +44,8 @@ export const MoreMenuModal: React.FC<MoreMenuModalProps> = ({
       case 'principal':
         return [
           { id: 'faculty_all', label: 'All Faculty Directory', icon: Users },
+          { id: 'syllabus', label: 'Syllabus & NAAC CO Tracker', icon: Building },
+          { id: 'substitutions', label: 'Substitution Oversight', icon: UserCheck },
           { id: 'timings', label: 'College Timings & Calendar', icon: Clock },
           { id: 'announcements', label: 'College Announcements', icon: Bell },
           { id: 'audit', label: 'Audit Trail Logs', icon: ShieldAlert },
@@ -53,13 +55,17 @@ export const MoreMenuModal: React.FC<MoreMenuModalProps> = ({
         return [
           { id: 'matrix', label: 'Daily Activity Matrix', icon: ClipboardList },
           { id: 'my_register', label: 'My Daily Activity Register', icon: ClipboardList },
-          { id: 'timetables', label: 'Faculty Timetable & Substitutions', icon: Clock },
+          { id: 'substitutions', label: 'Substitution Exchange', icon: UserCheck },
+          { id: 'syllabus', label: 'Syllabus & CO Coverage', icon: Building },
+          { id: 'timetables', label: 'Faculty Timetable & Allocations', icon: Clock },
           { id: 'leaves', label: 'Department Leave & OD Records', icon: UserCheck },
           { id: 'announcements', label: 'Department Announcements', icon: Bell },
         ];
       case 'faculty':
       default:
         return [
+          { id: 'substitutions', label: 'Substitution Requests', icon: UserCheck },
+          { id: 'syllabus', label: 'Syllabus & Course Outcomes', icon: Building },
           { id: 'reports', label: 'Download My Activity Reports', icon: FileSpreadsheet },
           { id: 'announcements', label: 'Announcements', icon: Bell },
         ];

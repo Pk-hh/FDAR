@@ -15,6 +15,8 @@ import {
   Layers,
 } from 'lucide-react';
 
+import { CampusPresenceBadge } from './CampusPresenceBadge';
+
 interface HeaderProps {
   onOpenNotifications: () => void;
   onOpenRoleSwitcher: () => void;
@@ -95,6 +97,9 @@ export const Header: React.FC<HeaderProps> = ({ onOpenNotifications, onOpenRoleS
 
         {/* Action icons & profile */}
         <div className="flex items-center gap-2 sm:gap-3">
+          {/* Institutional Campus Presence Verification */}
+          <CampusPresenceBadge />
+
           {/* Quick Role Switcher Button */}
           <button
             onClick={onOpenRoleSwitcher}

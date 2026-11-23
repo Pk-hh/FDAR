@@ -23,7 +23,11 @@ import {
   RotateCcw,
   Sparkles,
   Info,
+  Mic,
+  MicOff,
+  Award,
 } from 'lucide-react';
+import { createSpeechRecognizer } from '@/utils/speechRecognition';
 
 interface DailyRegisterFormProps {
   onSuccessSubmit?: () => void;
@@ -42,6 +46,32 @@ export const DailyRegisterForm: React.FC<DailyRegisterFormProps> = ({ onSuccessS
   const [lateReasonModalOpen, setLateReasonModalOpen] = useState(false);
   const [lateReason, setLateReason] = useState('');
   const [expandedPeriod, setExpandedPeriod] = useState<number | null>(timingState.currentPeriod?.periodNumber || 1);
+  const [listeningPeriod, setListeningPeriod] = useState<number | null>(null);
+
+  const toggleVoiceDictation = (periodNumber: number) => {
+    if (listeningPeriod === periodNumber) {
+      setListeningPeriod(null);
+      return;
+    }
+    const recognizer = createSpeechRecognizer();
+    if (!recognizer.isSupported) {
+      alert('Voice dictation is supported in modern mobile/desktop browsers (Chrome/Edge/Android).');
+      return;
+    }
+    setListeningPeriod(periodNumber);
+    recognizer.start(
+      (text) => {
+        const curTopic = log?.periods.find((p) => p.periodNumber === periodNumber)?.topicCovered || '';
+        const combined = curTopic ? `${curTopic} ${text}` : text;
+        handlePeriodChange(periodNumber, 'topicCovered', combined.trim());
+        setListeningPeriod(null);
+      },
+      (err) => {
+        console.warn('Voice dictation status:', err);
+        setListeningPeriod(null);
+      }
+    );
+  };
 
   // Load or initialize daily log for the selected date
   useEffect(() => {
@@ -458,9 +488,18 @@ export const DailyRegisterForm: React.FC<DailyRegisterFormProps> = ({ onSuccessS
                       </div>
 
                       <div>
-                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                          Students Present / Total
-                        </label>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="text-[11px] font-semibold text-slate-700">
+                            Students Present / Total
+                          </label>
+                          {period.studentsPresent !== undefined &&
+                            period.totalStudents &&
+                            period.studentsPresent / period.totalStudents < 0.75 && (
+                              <span className="text-[9px] font-bold text-amber-700 bg-amber-100 px-1.5 py-0.2 rounded border border-amber-300">
+                                &lt; 75% Alert
+                              </span>
+                            )}
+                        </div>
                         <div className="flex items-center gap-1.5">
                           <input
                             disabled={isLocked}
@@ -495,13 +534,62 @@ export const DailyRegisterForm: React.FC<DailyRegisterFormProps> = ({ onSuccessS
                       </div>
 
                       <div className="sm:col-span-2 lg:col-span-4">
-                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                          Topic Covered in Class <span className="text-rose-500">*</span>
-                        </label>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="text-[11px] font-semibold text-slate-700">
+                            Topic Covered in Class <span className="text-rose-500">*</span>
+                          </label>
+                          <div className="flex items-center gap-2">
+                            {/* Course Outcome Selector for NAAC/NBA */}
+                            <div className="flex items-center gap-1">
+                              <span className="text-[10px] text-slate-400">CO Target:</span>
+                              <select
+                                disabled={isLocked}
+                                value={period.workTitle || 'CO1'}
+                                onChange={(e) =>
+                                  handlePeriodChange(period.periodNumber, 'workTitle', e.target.value)
+                                }
+                                className="text-[10px] font-bold px-1.5 py-0.5 rounded border border-blue-200 bg-blue-50 text-blue-700"
+                                title="Map to Course Outcome (CO1-CO5) for NAAC documentation"
+                              >
+                                <option value="CO1">CO1</option>
+                                <option value="CO2">CO2</option>
+                                <option value="CO3">CO3</option>
+                                <option value="CO4">CO4</option>
+                                <option value="CO5">CO5</option>
+                              </select>
+                            </div>
+
+                            {/* Voice Dictation Button */}
+                            {!isLocked && (
+                              <button
+                                type="button"
+                                onClick={() => toggleVoiceDictation(period.periodNumber)}
+                                className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold transition ${
+                                  listeningPeriod === period.periodNumber
+                                    ? 'bg-rose-600 text-white animate-pulse'
+                                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                                }`}
+                                title="Dictate topic using Voice-to-Text"
+                              >
+                                {listeningPeriod === period.periodNumber ? (
+                                  <>
+                                    <MicOff className="w-3 h-3" />
+                                    <span>Listening...</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Mic className="w-3 h-3 text-blue-600" />
+                                    <span>Voice Input</span>
+                                  </>
+                                )}
+                              </button>
+                            )}
+                          </div>
+                        </div>
                         <input
                           disabled={isLocked}
                           type="text"
-                          placeholder="Specific academic topic taught during this period (e.g. BCNF Decomposition, Query Optimizer Plans)"
+                          placeholder="Specific academic topic taught during this period (or click 'Voice Input' to speak)"
                           value={period.topicCovered || ''}
                           onChange={(e) =>
                             handlePeriodChange(period.periodNumber, 'topicCovered', e.target.value)
