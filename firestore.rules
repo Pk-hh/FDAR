@@ -19,14 +19,14 @@ service cloud.firestore {
       return isAuthenticated() && (
         (hasUserDoc() && getUserData().get('isActive', true) == true) ||
         // Allow institutional principal by email during setup
-        (request.auth.token.email == 'principal@giits.edu.in')
+        (request.auth.token.email.lower() == 'pradeep4045t7@gmail.com')
       );
     }
 
     function isPrincipal() {
       return isAuthenticated() && (
         (hasUserDoc() && getUserData().get('role', '') == 'principal') ||
-        (request.auth.token.email == 'principal@giits.edu.in')
+        (request.auth.token.email.lower() == 'pradeep4045t7@gmail.com')
       );
     }
 

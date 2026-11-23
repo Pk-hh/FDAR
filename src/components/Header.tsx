@@ -19,10 +19,9 @@ import { CampusPresenceBadge } from './CampusPresenceBadge';
 
 interface HeaderProps {
   onOpenNotifications: () => void;
-  onOpenRoleSwitcher: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onOpenNotifications, onOpenRoleSwitcher }) => {
+export const Header: React.FC<HeaderProps> = ({ onOpenNotifications }) => {
   const { currentUser, role, logout } = useAuth();
   const { settings, timingState, isOnline, notifications } = useCollege();
   const [profileDropdown, setProfileDropdown] = useState(false);
@@ -108,16 +107,6 @@ export const Header: React.FC<HeaderProps> = ({ onOpenNotifications, onOpenRoleS
           {/* Institutional Campus Presence Verification */}
           <CampusPresenceBadge />
 
-          {/* Quick Role Switcher Button */}
-          <button
-            onClick={onOpenRoleSwitcher}
-            className="flex items-center gap-1.5 text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-1.5 rounded-lg border border-slate-700 transition"
-            title="Switch User / Role for Testing"
-          >
-            <Layers className="w-3.5 h-3.5 text-amber-400" />
-            <span className="hidden sm:inline font-medium">Switch Role</span>
-          </button>
-
           {/* Notifications button */}
           <button
             onClick={onOpenNotifications}
@@ -162,13 +151,6 @@ export const Header: React.FC<HeaderProps> = ({ onOpenNotifications, onOpenRoleS
                 </div>
 
                 <div className="py-1">
-                  <button
-                    onClick={onOpenRoleSwitcher}
-                    className="w-full text-left px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2"
-                  >
-                    <Shield className="w-4 h-4 text-blue-500" />
-                    <span>Change Active Role</span>
-                  </button>
                   <div className="px-3 py-2 text-[11px] text-slate-500 flex items-center gap-2">
                     <Building className="w-4 h-4 text-slate-400" />
                     <span className="truncate">{currentUser?.departmentName || 'Administration'}</span>

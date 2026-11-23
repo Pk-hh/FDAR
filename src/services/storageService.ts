@@ -46,6 +46,24 @@ const KEYS = {
   OFFLINE_QUEUE: 'giits_offline_queue',
 };
 
+// Purge any legacy mock cache from browser localStorage on load
+const DATA_VERSION = 'giits_prod_v3_clean';
+if (typeof window !== 'undefined') {
+  try {
+    if (localStorage.getItem('giits_data_version') !== DATA_VERSION) {
+      localStorage.removeItem(KEYS.USERS);
+      localStorage.removeItem(KEYS.DAILY_LOGS);
+      localStorage.removeItem(KEYS.TIMETABLES);
+      localStorage.removeItem(KEYS.LEAVES);
+      localStorage.removeItem(KEYS.ANNOUNCEMENTS);
+      localStorage.removeItem('giits_auth_user');
+      localStorage.setItem('giits_data_version', DATA_VERSION);
+    }
+  } catch (e) {
+    console.warn('LocalStorage cleanup:', e);
+  }
+}
+
 // Memory cache & local storage helpers
 function loadLocal<T>(key: string, defaultValue: T): T {
   try {
@@ -90,31 +108,18 @@ export class StorageService {
   static async seedInitialFirestoreData(): Promise<void> {
     if (!isFirebaseConfigured || !db) return;
     try {
-      console.log('[Firestore] Seeding initial GIITS collections to project fdar-cb701...');
+      console.log('[Firestore] Initializing clean GIITS collections for project fdar-cb701...');
       // 1. Settings
       await setDoc(doc(db, 'collegeSettings', 'main'), INITIAL_COLLEGE_SETTINGS);
       // 2. Departments
       for (const dept of INITIAL_DEPARTMENTS) {
         await setDoc(doc(db, 'departments', dept.id), dept);
       }
-      // 3. Users
+      // 3. Principal User Only
       for (const user of INITIAL_USERS) {
         await setDoc(doc(db, 'users', user.uid), user);
       }
-      // 4. Timetables
-      for (const tt of INITIAL_TIMETABLES) {
-        await setDoc(doc(db, 'timetables', tt.id), tt);
-      }
-      // 5. Holidays
-      for (const hol of INITIAL_HOLIDAYS) {
-        await setDoc(doc(db, 'holidays', hol.id), hol);
-      }
-      // 6. Daily Logs
-      const sampleLogs = generateInitialDailyLogs();
-      for (const log of sampleLogs) {
-        await setDoc(doc(db, 'dailyLogs', log.id), log);
-      }
-      console.log('[Firestore] Successfully seeded initial GIITS data to Cloud Firestore.');
+      console.log('[Firestore] Clean GIITS institutional schema ready.');
     } catch (err) {
       console.warn('[Firestore] Could not auto-seed Firestore (check Security Rules or permissions):', err);
     }

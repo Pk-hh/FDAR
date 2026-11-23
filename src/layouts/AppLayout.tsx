@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Header } from '@/components/Header';
 import { Sidebar } from '@/components/Sidebar';
 import { MobileNav } from '@/components/MobileNav';
-import { RoleSwitcherModal } from '@/components/RoleSwitcherModal';
 import { NotificationModal } from '@/components/NotificationModal';
 import { MoreMenuModal } from '@/components/MoreMenuModal';
 import { PeriodCountdownTimer } from '@/components/PeriodCountdownTimer';
@@ -15,7 +14,6 @@ interface AppLayoutProps {
 
 export const AppLayout: React.FC<AppLayoutProps> = ({ currentTab, onSelectTab, children }) => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [isRoleSwitcherOpen, setIsRoleSwitcherOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
 
@@ -24,7 +22,6 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ currentTab, onSelectTab, c
       {/* Sticky Header */}
       <Header
         onOpenNotifications={() => setIsNotificationsOpen(true)}
-        onOpenRoleSwitcher={() => setIsRoleSwitcherOpen(true)}
       />
 
       {/* Main Container */}
@@ -54,22 +51,17 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ currentTab, onSelectTab, c
         onOpenMoreMenu={() => setIsMoreMenuOpen(true)}
       />
 
-      {/* Modals */}
-      <RoleSwitcherModal
-        isOpen={isRoleSwitcherOpen}
-        onClose={() => setIsRoleSwitcherOpen(false)}
-      />
-
+      {/* Notification Modal */}
       <NotificationModal
         isOpen={isNotificationsOpen}
         onClose={() => setIsNotificationsOpen(false)}
       />
 
+      {/* More Options Modal */}
       <MoreMenuModal
         isOpen={isMoreMenuOpen}
         onClose={() => setIsMoreMenuOpen(false)}
         onSelectTab={onSelectTab}
-        onOpenRoleSwitcher={() => setIsRoleSwitcherOpen(true)}
       />
     </div>
   );

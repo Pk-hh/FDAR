@@ -21,14 +21,12 @@ interface MoreMenuModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSelectTab: (tab: string) => void;
-  onOpenRoleSwitcher: () => void;
 }
 
 export const MoreMenuModal: React.FC<MoreMenuModalProps> = ({
   isOpen,
   onClose,
   onSelectTab,
-  onOpenRoleSwitcher,
 }) => {
   const { role, logout } = useAuth();
 
@@ -108,20 +106,9 @@ export const MoreMenuModal: React.FC<MoreMenuModalProps> = ({
             <button
               onClick={() => {
                 onClose();
-                onOpenRoleSwitcher();
-              }}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-amber-50 text-amber-700 font-medium transition"
-            >
-              <Layers className="w-4 h-4 text-amber-500" />
-              <span>Switch Active Account / Role</span>
-            </button>
-
-            <button
-              onClick={() => {
-                onClose();
                 logout();
               }}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-rose-50 text-rose-600 font-medium transition"
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-rose-50 text-rose-600 font-medium transition cursor-pointer"
             >
               <LogOut className="w-4 h-4 text-rose-500" />
               <span>Sign Out</span>
