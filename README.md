@@ -1,5 +1,9 @@
-# Faculty Daily Activity Register (FDAR)
-### Gonna Institute of Information Technology and Sciences (GIITS)
+<div align="center">
+  <img src="public/logo.png" alt="GIITS Official Crest" width="130" />
+  <h1>Faculty Daily Activity Register (FDAR)</h1>
+  <p><strong>GONNA INSTITUTE OF INFORMATION TECHNOLOGY AND SCIENCES (GIITS)</strong></p>
+  <p><em>Approved by AICTE, Affiliated to JNTUGV | Visakhapatnam, Andhra Pradesh</em></p>
+</div>
 
 Centralized digital academic activity monitoring system replacing traditional handwritten faculty log registers. Designed mobile-first for smartphones, tablets, laptops, and desktop computers.
 
