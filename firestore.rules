@@ -1,0 +1,157 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isActive() {
+      return isAuthenticated() && getUserData().isActive == true;
+    }
+
+    function isPrincipal() {
+      return isActive() && getUserData().role == 'principal';
+    }
+
+    function isHOD(departmentId) {
+      return isActive() && getUserData().role == 'hod' && getUserData().departmentId == departmentId;
+    }
+
+    function isSelf(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Users collection
+    match /users/{userId} {
+      // Principal can read/write all users
+      // HOD can read faculty in their department and update permitted fields
+      // Faculty can read only their own profile and edit limited fields (mobile, qualification)
+      allow read: if isAuthenticated() && (
+        isPrincipal() ||
+        (isActive() && getUserData().departmentId == resource.data.departmentId) ||
+        isSelf(userId)
+      );
+
+      allow create: if isPrincipal() || (
+        isActive() && getUserData().role == 'hod' &&
+        request.resource.data.role == 'faculty' &&
+        request.resource.data.departmentId == getUserData().departmentId
+      );
+
+      allow update: if isPrincipal() || (
+        isActive() && getUserData().role == 'hod' &&
+        resource.data.role == 'faculty' &&
+        resource.data.departmentId == getUserData().departmentId &&
+        // Cannot elevate role to principal or HOD
+        request.resource.data.role == 'faculty'
+      ) || (
+        isSelf(userId) &&
+        // Faculty cannot change their role, department, or active status
+        request.resource.data.role == resource.data.role &&
+        request.resource.data.departmentId == resource.data.departmentId &&
+        request.resource.data.isActive == resource.data.isActive
+      );
+
+      // Never delete accounts permanently, only deactivate (Section 6)
+      allow delete: if false;
+    }
+
+    // Departments collection
+    match /departments/{departmentId} {
+      allow read: if isAuthenticated();
+      allow write: if isPrincipal();
+    }
+
+    // Daily Logs Collection (Deterministic ID: facultyId_YYYY-MM-DD)
+    match /dailyLogs/{logId} {
+      allow read: if isAuthenticated() && (
+        isPrincipal() ||
+        (isActive() && getUserData().role == 'hod' && resource.data.departmentId == getUserData().departmentId) ||
+        (isActive() && resource.data.facultyId == request.auth.uid)
+      );
+
+      // Create log: faculty for themselves (as draft or submitted)
+      allow create: if isActive() && (
+        isPrincipal() ||
+        (request.resource.data.facultyId == request.auth.uid &&
+         request.resource.data.submissionStatus in ['draft', 'submitted'])
+      );
+
+      // Update log
+      allow update: if isAuthenticated() && (
+        // Principal can review HOD logs or manage approved records
+        isPrincipal() ||
+
+        // HOD can review and approve/return logs in their department, but CANNOT approve their own log
+        (isActive() && getUserData().role == 'hod' &&
+         resource.data.departmentId == getUserData().departmentId &&
+         resource.data.facultyId != request.auth.uid &&
+         request.resource.data.submissionStatus in ['approved', 'returned_for_correction', 'under_review']) ||
+
+        // Faculty can update their own log if NOT approved
+        (isActive() && resource.data.facultyId == request.auth.uid &&
+         resource.data.submissionStatus != 'approved' &&
+         // Faculty cannot mark themselves as approved
+         request.resource.data.submissionStatus in ['draft', 'submitted'])
+      );
+
+      allow delete: if false;
+    }
+
+    // Timetables
+    match /timetables/{timetableId} {
+      allow read: if isAuthenticated();
+      allow write: if isPrincipal() || (
+        isActive() && getUserData().role == 'hod' &&
+        request.resource.data.departmentId == getUserData().departmentId
+      );
+    }
+
+    // Holidays & Academic Calendar
+    match /holidays/{holidayId} {
+      allow read: if isAuthenticated();
+      allow write: if isPrincipal();
+    }
+
+    // Leave & On Duty Records
+    match /leaveRecords/{leaveId} {
+      allow read: if isAuthenticated() && (
+        isPrincipal() ||
+        (isActive() && getUserData().role == 'hod' && resource.data.departmentId == getUserData().departmentId) ||
+        resource.data.facultyId == request.auth.uid
+      );
+      allow write: if isPrincipal() || (
+        isActive() && getUserData().role == 'hod' &&
+        request.resource.data.departmentId == getUserData().departmentId
+      );
+    }
+
+    // College Settings
+    match /collegeSettings/{settingId} {
+      allow read: if isAuthenticated();
+      allow write: if isPrincipal();
+    }
+
+    // Announcements
+    match /announcements/{announcementId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isPrincipal() || (
+        isActive() && getUserData().role == 'hod'
+      );
+      allow delete: if isPrincipal();
+    }
+
+    // Audit Logs (Append-only)
+    match /auditLogs/{logId} {
+      allow read: if isPrincipal();
+      allow create: if isAuthenticated();
+      allow update, delete: if false;
+    }
+  }
+}
