@@ -20,7 +20,18 @@ import {
   Check,
   AlertCircle,
   FileSpreadsheet,
+  Eye,
+  EyeOff,
+  Copy,
+  RefreshCw,
+  Lock,
+  ExternalLink,
 } from 'lucide-react';
+
+const generateInitialPassword = () => {
+  const digits = Math.floor(1000 + Math.random() * 9000);
+  return `Giits@${digits}`;
+};
 
 export const FacultyManagement: React.FC = () => {
   const { currentUser } = useAuth();
@@ -56,9 +67,15 @@ export const FacultyManagement: React.FC = () => {
     employmentStatus: 'Regular' as User['employmentStatus'],
     assignedSubjects: 'Database Management Systems, Web Technologies',
     assignedClasses: 'III-CSE-A, II-CSE-B',
+    initialPassword: '',
   };
 
   const [formData, setFormData] = useState(initialFormState);
+  const [showFormPassword, setShowFormPassword] = useState(false);
+  const [modalPassword, setModalPassword] = useState('');
+  const [showModalPassword, setShowModalPassword] = useState(false);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
 
   // Filtered users list
   const filteredUsers = users.filter((u) => {
@@ -74,6 +91,17 @@ export const FacultyManagement: React.FC = () => {
     }
     return true;
   });
+
+  // Open Add Modal
+  const handleOpenAdd = () => {
+    setEditingUser(null);
+    setFormData({
+      ...initialFormState,
+      initialPassword: generateInitialPassword(),
+    });
+    setShowFormPassword(true);
+    setAddModalOpen(true);
+  };
 
   // Open Edit Modal
   const handleOpenEdit = (user: User) => {
@@ -91,8 +119,52 @@ export const FacultyManagement: React.FC = () => {
       employmentStatus: user.employmentStatus,
       assignedSubjects: user.assignedSubjects?.join(', ') || '',
       assignedClasses: user.assignedClasses?.join(', ') || '',
+      initialPassword: user.password || user.initialPassword || generateInitialPassword(),
     });
+    setShowFormPassword(false);
     setAddModalOpen(true);
+  };
+
+  // Open Credentials / Initial Password Modal
+  const handleOpenCredentialsModal = (user: User) => {
+    setInviteModalUser(user);
+    const pass = user.password || user.initialPassword || generateInitialPassword();
+    setModalPassword(pass);
+    setShowModalPassword(true);
+    setCopiedKey(null);
+  };
+
+  // Update password directly from credentials modal
+  const handleUpdatePasswordFromModal = async () => {
+    if (!currentUser || !inviteModalUser || !modalPassword.trim()) return;
+    setIsUpdatingPassword(true);
+    try {
+      const passToSave = modalPassword.trim();
+      const updatedUser: User = {
+        ...inviteModalUser,
+        password: passToSave,
+        initialPassword: passToSave,
+        updatedAt: new Date().toISOString(),
+      };
+      await StorageService.saveUser(updatedUser, currentUser.uid);
+      await refreshAll();
+      setInviteModalUser(updatedUser);
+      setStatusMessage({
+        type: 'success',
+        text: `Login password for ${updatedUser.fullName} updated to "${passToSave}" successfully!`,
+      });
+      setTimeout(() => setStatusMessage(null), 4000);
+    } catch (err: any) {
+      alert('Error updating password: ' + err.message);
+    } finally {
+      setIsUpdatingPassword(false);
+    }
+  };
+
+  const copyToClipboard = (text: string, key: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedKey(key);
+    setTimeout(() => setCopiedKey(null), 2500);
   };
 
   // Save or update faculty
@@ -108,6 +180,8 @@ export const FacultyManagement: React.FC = () => {
     try {
       const dept = departments.find((d) => d.id === formData.departmentId);
       const chosenRole = isPrincipal ? formData.role : (editingUser ? editingUser.role : 'faculty');
+      const pass = formData.initialPassword.trim() || (editingUser?.password || generateInitialPassword());
+
       const userToSave: User = {
         uid: editingUser ? editingUser.uid : 'user_' + Date.now(),
         employeeId: formData.employeeId.trim(),
@@ -126,6 +200,8 @@ export const FacultyManagement: React.FC = () => {
         isActive: editingUser ? editingUser.isActive : true,
         createdAt: editingUser ? editingUser.createdAt : new Date().toISOString(),
         updatedAt: new Date().toISOString(),
+        password: pass,
+        initialPassword: editingUser?.initialPassword || pass,
       };
 
       await StorageService.saveUser(userToSave, currentUser.uid);
@@ -143,9 +219,9 @@ export const FacultyManagement: React.FC = () => {
       setFormData(initialFormState);
       setStatusMessage({
         type: 'success',
-        text: `Faculty member ${userToSave.fullName} ${editingUser ? 'updated' : 'created'} successfully!`,
+        text: `Faculty member ${userToSave.fullName} ${editingUser ? 'updated' : 'registered'} successfully with initial password: "${pass}"`,
       });
-      setTimeout(() => setStatusMessage(null), 3000);
+      setTimeout(() => setStatusMessage(null), 5000);
     } catch (err: any) {
       setStatusMessage({ type: 'error', text: 'Error saving faculty: ' + err.message });
     }
@@ -169,7 +245,7 @@ export const FacultyManagement: React.FC = () => {
       const lines = csvInput.trim().split('\n');
       let count = 0;
       for (const line of lines) {
-        // Expected format: employeeId,fullName,email,designation,qualification
+        // Expected format: employeeId,fullName,email,designation,qualification,[initialPassword]
         const parts = line.split(',').map((p) => p.trim());
         if (parts.length >= 3) {
           const empId = parts[0];
@@ -177,6 +253,7 @@ export const FacultyManagement: React.FC = () => {
           const email = parts[2];
           const designation = (parts[3] as Designation) || 'Assistant Professor';
           const qualification = parts[4] || 'M.Tech';
+          const initialPass = parts[5] || generateInitialPassword();
           const dept = departments.find((d) => d.id === (isPrincipal ? 'dept_cse' : deptId));
 
           const newUser: User = {
@@ -197,6 +274,8 @@ export const FacultyManagement: React.FC = () => {
             isActive: true,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
+            password: initialPass,
+            initialPassword: initialPass,
           };
           await StorageService.saveUser(newUser, currentUser.uid);
           count++;
@@ -236,11 +315,7 @@ export const FacultyManagement: React.FC = () => {
           </button>
 
           <button
-            onClick={() => {
-              setEditingUser(null);
-              setFormData(initialFormState);
-              setAddModalOpen(true);
-            }}
+            onClick={handleOpenAdd}
             className="px-4 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition"
           >
             <UserPlus className="w-4 h-4" />
@@ -370,15 +445,15 @@ export const FacultyManagement: React.FC = () => {
                   </td>
                   <td className="py-3 px-4 text-right space-x-1 whitespace-nowrap">
                     <button
-                      onClick={() => setInviteModalUser(user)}
-                      className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700"
-                      title="Send Invitation / Password Setup Link"
+                      onClick={() => handleOpenCredentialsModal(user)}
+                      className="p-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700"
+                      title="User Login Credentials & Initial Password"
                     >
                       <KeyRound className="w-3.5 h-3.5" />
                     </button>
                     <button
                       onClick={() => handleOpenEdit(user)}
-                      className="p-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700"
+                      className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700"
                       title="Edit Faculty Member"
                     >
                       <Edit2 className="w-3.5 h-3.5" />
@@ -567,19 +642,77 @@ export const FacultyManagement: React.FC = () => {
                     className="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs"
                   />
                 </div>
+
+                {/* Initial Login Password Field */}
+                <div className="sm:col-span-2 p-3.5 bg-blue-50/70 border border-blue-200 rounded-xl space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="block font-bold text-slate-800 text-xs flex items-center gap-1.5">
+                      <KeyRound className="w-4 h-4 text-blue-600" />
+                      <span>{editingUser ? 'Account Login Password' : 'Initial Login Password'}</span>
+                      <span className="text-rose-500">*</span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setFormData((prev) => ({ ...prev, initialPassword: generateInitialPassword() }))}
+                      className="text-[11px] text-blue-600 hover:text-blue-800 font-semibold flex items-center gap-1 cursor-pointer"
+                      title="Generate random password"
+                    >
+                      <RefreshCw className="w-3 h-3" />
+                      <span>Generate Random</span>
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="relative flex-1">
+                      <input
+                        type={showFormPassword ? 'text' : 'password'}
+                        required
+                        value={formData.initialPassword}
+                        onChange={(e) => setFormData({ ...formData, initialPassword: e.target.value })}
+                        placeholder="e.g. Giits@2026"
+                        className="w-full px-3 py-2 pr-9 rounded-lg border border-blue-300 bg-white text-xs font-mono font-semibold text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowFormPassword(!showFormPassword)}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                        title={showFormPassword ? 'Hide password' : 'Show password'}
+                      >
+                        {showFormPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (formData.initialPassword) {
+                          copyToClipboard(formData.initialPassword, 'formPass');
+                        }
+                      }}
+                      className="px-3 py-2 rounded-lg border border-blue-200 bg-white hover:bg-blue-50 text-blue-700 text-xs font-semibold flex items-center gap-1 cursor-pointer shrink-0"
+                      title="Copy Password"
+                    >
+                      {copiedKey === 'formPass' ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                      <span>{copiedKey === 'formPass' ? 'Copied' : 'Copy'}</span>
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-slate-500 leading-tight">
+                    {editingUser
+                      ? 'The faculty member logs in with this password. You can update or reassign it anytime.'
+                      : 'Provide this initial password to the user. They will use this password and their official email to log in.'}
+                  </p>
+                </div>
               </div>
 
               <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-2 shrink-0">
                 <button
                   type="button"
                   onClick={() => setAddModalOpen(false)}
-                  className="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-700 font-semibold"
+                  className="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-700 font-semibold cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold"
+                  className="px-5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold cursor-pointer"
                 >
                   {editingUser ? 'Save Updates' : 'Create Faculty Account'}
                 </button>
@@ -589,26 +722,149 @@ export const FacultyManagement: React.FC = () => {
         </div>
       )}
 
-      {/* Account Invitation / Password Setup Modal */}
+      {/* Account Credentials / Initial Password Modal */}
       {inviteModalUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-md w-full p-5 space-y-4 animate-in zoom-in-95 duration-150">
-            <div className="flex items-center gap-2 text-blue-600">
-              <KeyRound className="w-5 h-5" />
-              <h3 className="font-bold text-sm text-slate-900">Secure Account Invitation</h3>
-            </div>
-            <p className="text-xs text-slate-600 leading-relaxed">
-              Faculty passwords are never exposed to HODs or stored in Firestore (Section 6). The faculty member can set their password using this secure one-time invitation link:
-            </p>
-
-            <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 font-mono text-[11px] text-slate-700 select-all break-all">
-              https://giits-fdar.web.app/auth/setup?email={encodeURIComponent(inviteModalUser.email)}&token={btoa(inviteModalUser.uid + '_giits_auth')}
-            </div>
-
-            <div className="flex justify-end gap-2 pt-2">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-lg w-full p-5 space-y-4 animate-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="flex items-start justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-600 text-white font-bold flex items-center justify-center text-sm shadow-md">
+                  {inviteModalUser.fullName.charAt(0)}
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm text-slate-900">{inviteModalUser.fullName}</h3>
+                  <p className="text-[11px] text-slate-500">
+                    {inviteModalUser.designation} • {inviteModalUser.departmentName || 'Academic Dept'} ({inviteModalUser.employeeId})
+                  </p>
+                </div>
+              </div>
               <button
                 onClick={() => setInviteModalUser(null)}
-                className="px-4 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold"
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Explanatory banner */}
+            <div className="p-3 rounded-xl bg-blue-50 border border-blue-200 text-blue-900 text-xs flex items-center gap-2">
+              <KeyRound className="w-4 h-4 text-blue-600 shrink-0" />
+              <span>
+                As an Administrator, you can view, provide, or reassign the initial login password for this faculty member.
+              </span>
+            </div>
+
+            {/* Email field */}
+            <div className="space-y-1 text-xs">
+              <label className="block font-semibold text-slate-700">Official Login Email</label>
+              <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-800">
+                <Mail className="w-4 h-4 text-slate-400 shrink-0" />
+                <span className="font-mono text-xs flex-1 truncate">{inviteModalUser.email}</span>
+                <button
+                  type="button"
+                  onClick={() => copyToClipboard(inviteModalUser.email, 'email')}
+                  className="px-2 py-1 rounded-md bg-white border border-slate-200 hover:bg-slate-100 text-[11px] font-semibold text-slate-700 flex items-center gap-1 cursor-pointer"
+                >
+                  {copiedKey === 'email' ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                  <span>{copiedKey === 'email' ? 'Copied' : 'Copy'}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Initial Password field & Quick Update */}
+            <div className="space-y-1.5 text-xs">
+              <div className="flex items-center justify-between">
+                <label className="block font-semibold text-slate-700">Login Password</label>
+                <button
+                  type="button"
+                  onClick={() => setModalPassword(generateInitialPassword())}
+                  className="text-[11px] text-blue-600 hover:text-blue-800 font-semibold flex items-center gap-1 cursor-pointer"
+                >
+                  <RefreshCw className="w-3 h-3" />
+                  <span>Generate New</span>
+                </button>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1">
+                  <input
+                    type={showModalPassword ? 'text' : 'password'}
+                    value={modalPassword}
+                    onChange={(e) => setModalPassword(e.target.value)}
+                    placeholder="Enter password"
+                    className="w-full px-3 py-2 pr-9 rounded-xl border border-slate-300 bg-white font-mono text-xs font-semibold text-slate-900 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowModalPassword(!showModalPassword)}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                    title={showModalPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showModalPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => copyToClipboard(modalPassword, 'pass')}
+                  className="px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1 cursor-pointer shrink-0"
+                  title="Copy Password"
+                >
+                  {copiedKey === 'pass' ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                  <span>{copiedKey === 'pass' ? 'Copied' : 'Copy'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleUpdatePasswordFromModal}
+                  disabled={isUpdatingPassword || !modalPassword.trim()}
+                  className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold disabled:opacity-50 transition cursor-pointer shrink-0"
+                >
+                  {isUpdatingPassword ? 'Saving...' : 'Save'}
+                </button>
+              </div>
+              <p className="text-[11px] text-slate-500">
+                You can change this password at any time and share the new password with the user.
+              </p>
+            </div>
+
+            {/* Formatted Message to Share */}
+            <div className="space-y-1.5 pt-2 border-t border-slate-100 text-xs">
+              <label className="block font-semibold text-slate-700">Ready-to-Share Credentials Message</label>
+              <div className="bg-slate-900 text-slate-100 p-3.5 rounded-xl font-mono text-[11px] leading-relaxed whitespace-pre-line select-all">
+{`🏛️ GIITS - Faculty Daily Activity Register (FDAR)
+Hello ${inviteModalUser.fullName},
+Your faculty account is ready. Use these credentials to sign in:
+
+🌐 Portal: ${typeof window !== 'undefined' ? window.location.origin : 'https://giits-fdar.web.app'}
+📧 Email: ${inviteModalUser.email}
+🔑 Initial Password: ${modalPassword}`}
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  const portalUrl = typeof window !== 'undefined' ? window.location.origin : 'https://giits-fdar.web.app';
+                  const msg = `🏛️ GIITS - Faculty Daily Activity Register (FDAR)\nHello ${inviteModalUser.fullName},\nYour faculty account is ready. Use these credentials to sign in:\n\n🌐 Portal: ${portalUrl}\n📧 Email: ${inviteModalUser.email}\n🔑 Initial Password: ${modalPassword}`;
+                  copyToClipboard(msg, 'fullMsg');
+                }}
+                className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition cursor-pointer"
+              >
+                {copiedKey === 'fullMsg' ? (
+                  <>
+                    <Check className="w-4 h-4" />
+                    <span>Credentials Message Copied to Clipboard!</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-4 h-4" />
+                    <span>Copy Full Credentials Message (WhatsApp / Email)</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            <div className="flex justify-end pt-2 border-t border-slate-100">
+              <button
+                onClick={() => setInviteModalUser(null)}
+                className="px-4 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold cursor-pointer"
               >
                 Done
               </button>
@@ -628,7 +884,7 @@ export const FacultyManagement: React.FC = () => {
             <p className="text-xs text-slate-600">
               Paste CSV records in the format: <br />
               <code className="text-blue-600 bg-blue-50 px-1 py-0.5 rounded font-mono">
-                EmployeeID, FullName, Email, Designation, Qualification
+                EmployeeID, FullName, Email, Designation, Qualification, [InitialPassword]
               </code>
             </p>
 
@@ -636,21 +892,24 @@ export const FacultyManagement: React.FC = () => {
               rows={6}
               value={csvInput}
               onChange={(e) => setCsvInput(e.target.value)}
-              placeholder="GIITS-CSE-021, Dr. M. Prasad, prasad.cse@giits.edu.in, Associate Professor, Ph.D.&#10;GIITS-CSE-022, Ms. K. Sravani, sravani.cse@giits.edu.in, Assistant Professor, M.Tech"
+              placeholder="GIITS-CSE-021, Dr. M. Prasad, prasad.cse@giits.edu.in, Associate Professor, Ph.D., Giits@2026&#10;GIITS-CSE-022, Ms. K. Sravani, sravani.cse@giits.edu.in, Assistant Professor, M.Tech"
               className="w-full px-3 py-2 rounded-xl border border-slate-300 font-mono text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
             />
+            <p className="text-[11px] text-slate-500">
+              Note: If InitialPassword is omitted, a secure random initial password will be automatically assigned.
+            </p>
 
             <div className="flex justify-end gap-2 pt-2">
               <button
                 onClick={() => setCsvModalOpen(false)}
-                className="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-700 text-xs font-semibold"
+                className="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-700 text-xs font-semibold cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={handleCsvImport}
                 disabled={!csvInput.trim()}
-                className="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold disabled:opacity-50"
+                className="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold disabled:opacity-50 cursor-pointer"
               >
                 Import Faculty
               </button>

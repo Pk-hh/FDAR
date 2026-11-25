@@ -17,6 +17,7 @@ interface AuthContextType {
   login: (email: string, password?: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   updateProfile: (data: Partial<User>) => Promise<void>;
+  changePassword: (newPassword: string) => Promise<{ success: boolean; error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -42,6 +43,8 @@ function createDefaultPrincipal(uid: string): User {
     isActive: true,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
+    password: 'Pradeep@2005',
+    initialPassword: 'Pradeep@2005',
   };
 }
 
@@ -128,11 +131,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             } catch (createErr) {
               console.warn('Could not auto-create Principal in Firebase Auth:', createErr);
             }
+          } else {
+            // For Faculty / HOD: if they exist in Firestore/storage with this password, auto-create in Firebase Auth
+            const allUsers = await StorageService.getUsers();
+            const matchedUser = allUsers.find((u) => u.email.toLowerCase() === cleanEmail);
+            const expectedPass = matchedUser?.password || matchedUser?.initialPassword || 'Giits@2026';
+            if (matchedUser && matchedUser.isActive && password === expectedPass) {
+              try {
+                const createdCred = await createUserWithEmailAndPassword(auth, cleanEmail, password);
+                fbUid = createdCred.user.uid;
+                fbAuthSuccess = true;
+              } catch (createErr) {
+                console.warn('Could not auto-create Faculty in Firebase Auth:', createErr);
+              }
+            }
           }
         }
 
         if (fbAuthSuccess && fbUid) {
           let user = await StorageService.getUser(fbUid);
+          if (!user) {
+            const allUsers = await StorageService.getUsers();
+            user = allUsers.find((u) => u.email.toLowerCase() === cleanEmail) || null;
+            if (user && user.uid !== fbUid) {
+              // Update user record with the active Firebase uid
+              const updated = { ...user, uid: fbUid };
+              await StorageService.saveUser(updated, fbUid);
+              user = updated;
+            }
+          }
           if (!user && isPrincipal) {
             const defaultPrin = createDefaultPrincipal(fbUid);
             await StorageService.saveUser(defaultPrin, fbUid);
@@ -189,8 +216,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { success: false, error: 'Account is deactivated. Please contact the Principal.' };
       }
 
-      setCurrentUser(matched);
-      localStorage.setItem(AUTH_USER_KEY, matched.uid);
+      // Verify the password given by administrator or default initial password
+      const expectedPassword = matched.password || matched.initialPassword || 'Giits@2026';
+      if (password !== expectedPassword) {
+        setIsLoading(false);
+        return {
+          success: false,
+          error: 'Incorrect password. Please enter the initial password provided by your Department HOD or Administrator.',
+        };
+      }
+
+      // If user document didn't have password saved, persist it now
+      let userSession = matched;
+      if (!matched.password) {
+        userSession = { ...matched, password: expectedPassword, initialPassword: expectedPassword };
+        await StorageService.saveUser(userSession, matched.uid);
+      }
+
+      setCurrentUser(userSession);
+      localStorage.setItem(AUTH_USER_KEY, userSession.uid);
       setIsLoading(false);
       return { success: true };
     } catch (err: any) {
@@ -228,6 +272,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setCurrentUser(updated);
   };
 
+  const changePassword = async (newPassword: string): Promise<{ success: boolean; error?: string }> => {
+    if (!currentUser) return { success: false, error: 'Not authenticated.' };
+    if (!newPassword || newPassword.length < 6) {
+      return { success: false, error: 'Password must be at least 6 characters long.' };
+    }
+
+    try {
+      const updated = {
+        ...currentUser,
+        password: newPassword,
+        updatedAt: new Date().toISOString(),
+      };
+      await StorageService.saveUser(updated, currentUser.uid);
+      setCurrentUser(updated);
+
+      // Also attempt to update password in Firebase Auth if signed in
+      if (isFirebaseConfigured && auth && auth.currentUser) {
+        try {
+          const { updatePassword: fbUpdatePassword } = await import('firebase/auth');
+          await fbUpdatePassword(auth.currentUser, newPassword);
+        } catch (fbErr) {
+          console.warn('Firebase Auth password update note:', fbErr);
+        }
+      }
+
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Failed to update password.' };
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -238,6 +313,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         login,
         logout,
         updateProfile,
+        changePassword,
       }}
     >
       {children}

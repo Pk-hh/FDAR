@@ -123,6 +123,8 @@ export const INITIAL_USERS: User[] = [
     isActive: true,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
+    password: 'Pradeep@2005',
+    initialPassword: 'Pradeep@2005',
   },
 ];
 

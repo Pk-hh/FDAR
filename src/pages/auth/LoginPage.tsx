@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCollege } from '@/contexts/CollegeContext';
-import { Lock, Mail, ArrowRight, AlertCircle, Shield } from 'lucide-react';
+import { Lock, Mail, ArrowRight, AlertCircle, Shield, Eye, EyeOff } from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
   const { login } = useAuth();
@@ -9,6 +9,7 @@ export const LoginPage: React.FC = () => {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -93,20 +94,34 @@ export const LoginPage: React.FC = () => {
             </div>
 
             <div>
-              <label className="block font-semibold text-slate-700 mb-1">
-                Account Password
-              </label>
-              <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-800 focus-within:ring-2 focus-within:ring-blue-500">
+              <div className="flex items-center justify-between mb-1">
+                <label className="block font-semibold text-slate-700">
+                  Account Password
+                </label>
+                <span className="text-[10px] text-slate-400 font-medium">Initial / Registered password</span>
+              </div>
+              <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-800 focus-within:ring-2 focus-within:ring-blue-500 relative">
                 <Lock className="w-4 h-4 text-slate-400 shrink-0" />
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   required
-                  placeholder="Enter your password"
+                  placeholder="Enter your initial or account password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-transparent focus:outline-none text-xs"
+                  className="w-full bg-transparent focus:outline-none text-xs pr-7"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="text-slate-400 hover:text-slate-600 cursor-pointer absolute right-3 top-1/2 -translate-y-1/2"
+                  title={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
               </div>
+              <p className="text-[11px] text-slate-500 mt-1">
+                Use the initial password provided by your Department HOD or Administrator.
+              </p>
             </div>
 
             <button

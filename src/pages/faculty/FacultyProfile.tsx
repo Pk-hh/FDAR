@@ -1,18 +1,73 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { User, Phone, Mail, Building, Award, Calendar, Shield, Save, CheckCircle } from 'lucide-react';
+import {
+  User,
+  Phone,
+  Mail,
+  Building,
+  Award,
+  Calendar,
+  Shield,
+  Save,
+  CheckCircle,
+  KeyRound,
+  Lock,
+  Eye,
+  EyeOff,
+  AlertCircle,
+} from 'lucide-react';
 
 export const FacultyProfile: React.FC = () => {
-  const { currentUser, updateProfile } = useAuth();
+  const { currentUser, updateProfile, changePassword } = useAuth();
   const [mobileNumber, setMobileNumber] = useState(currentUser?.mobileNumber || '');
   const [qualification, setQualification] = useState(currentUser?.qualification || '');
   const [isSaved, setIsSaved] = useState(false);
+
+  // Password Change State
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPass, setShowPass] = useState(false);
+  const [passError, setPassError] = useState<string | null>(null);
+  const [passSuccess, setPassSuccess] = useState<string | null>(null);
+  const [isUpdatingPass, setIsUpdatingPass] = useState(false);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     await updateProfile({ mobileNumber, qualification });
     setIsSaved(true);
     setTimeout(() => setIsSaved(false), 2500);
+  };
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPassError(null);
+    setPassSuccess(null);
+
+    if (!newPassword) {
+      setPassError('Please enter a new password.');
+      return;
+    }
+    if (newPassword.length < 6) {
+      setPassError('Password must be at least 6 characters long.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPassError('New password and confirm password do not match.');
+      return;
+    }
+
+    setIsUpdatingPass(true);
+    const res = await changePassword(newPassword);
+    setIsUpdatingPass(false);
+
+    if (res.success) {
+      setPassSuccess('Your password has been updated successfully!');
+      setNewPassword('');
+      setConfirmPassword('');
+      setTimeout(() => setPassSuccess(null), 4000);
+    } else {
+      setPassError(res.error || 'Failed to update password.');
+    }
   };
 
   return (
@@ -131,6 +186,85 @@ export const FacultyProfile: React.FC = () => {
             >
               <Save className="w-4 h-4" />
               <span>Save Profile Changes</span>
+            </button>
+          </div>
+        </form>
+      </div>
+
+      {/* Account Security & Password Card */}
+      <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs space-y-4">
+        <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
+          <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+            <KeyRound className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="font-bold text-sm text-slate-900">Account Security & Password</h3>
+            <p className="text-xs text-slate-500">
+              Manage your login credentials. You can change the initial password provided by the administrator.
+            </p>
+          </div>
+        </div>
+
+        {passSuccess && (
+          <div className="p-3 rounded-xl bg-emerald-100 border border-emerald-300 text-emerald-800 text-xs flex items-center gap-2 animate-in fade-in">
+            <CheckCircle className="w-4 h-4 shrink-0" />
+            <span>{passSuccess}</span>
+          </div>
+        )}
+
+        {passError && (
+          <div className="p-3 rounded-xl bg-rose-50 border border-rose-300 text-rose-800 text-xs flex items-center gap-2 animate-in fade-in">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>{passError}</span>
+          </div>
+        )}
+
+        <form onSubmit={handlePasswordChange} className="space-y-4 text-xs">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-slate-700 font-semibold mb-1">New Password</label>
+              <div className="flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-300 bg-white text-slate-800 focus-within:ring-2 focus-within:ring-blue-500 relative">
+                <Lock className="w-4 h-4 text-slate-400 shrink-0" />
+                <input
+                  type={showPass ? 'text' : 'password'}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Minimum 6 characters"
+                  className="w-full bg-transparent focus:outline-none pr-7"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPass(!showPass)}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                >
+                  {showPass ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-slate-700 font-semibold mb-1">Confirm New Password</label>
+              <div className="flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-300 bg-white text-slate-800 focus-within:ring-2 focus-within:ring-blue-500">
+                <Lock className="w-4 h-4 text-slate-400 shrink-0" />
+                <input
+                  type={showPass ? 'text' : 'password'}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Re-enter new password"
+                  className="w-full bg-transparent focus:outline-none"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end pt-1">
+            <button
+              type="submit"
+              disabled={isUpdatingPass}
+              className="px-5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition disabled:opacity-50 cursor-pointer"
+            >
+              <KeyRound className="w-4 h-4" />
+              <span>{isUpdatingPass ? 'Updating...' : 'Update Password'}</span>
             </button>
           </div>
         </form>
