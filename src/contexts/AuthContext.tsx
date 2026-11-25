@@ -28,7 +28,7 @@ function createDefaultPrincipal(uid: string): User {
   return {
     uid,
     employeeId: 'GIITS-DIR-001',
-    fullName: 'Dr. Pradeep',
+    fullName: 'Dr P.S.N Murthy',
     email: 'pradeep4045t7@gmail.com',
     role: 'principal',
     departmentId: '',
@@ -64,6 +64,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 const defaultPrin = createDefaultPrincipal(fbUser.uid);
                 await StorageService.saveUser(defaultPrin, fbUser.uid);
                 user = defaultPrin;
+              } else if (user && fbUser.email?.toLowerCase() === 'pradeep4045t7@gmail.com' && user.fullName !== 'Dr P.S.N Murthy') {
+                user = { ...user, fullName: 'Dr P.S.N Murthy' };
+                await StorageService.saveUser(user, fbUser.uid);
               }
               if (user && user.isActive) {
                 setCurrentUser(user);
@@ -73,7 +76,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             } else {
               const savedUid = localStorage.getItem(AUTH_USER_KEY);
               if (savedUid) {
-                const user = await StorageService.getUser(savedUid);
+                let user = await StorageService.getUser(savedUid);
+                if (user && user.role === 'principal' && user.fullName !== 'Dr P.S.N Murthy') {
+                  user = { ...user, fullName: 'Dr P.S.N Murthy' };
+                  await StorageService.saveUser(user, user.uid);
+                }
                 setCurrentUser(user && user.isActive ? user : null);
               } else {
                 setCurrentUser(null);
@@ -84,7 +91,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } else {
           const savedUid = localStorage.getItem(AUTH_USER_KEY);
           if (savedUid) {
-            const user = await StorageService.getUser(savedUid);
+            let user = await StorageService.getUser(savedUid);
+            if (user && user.role === 'principal' && user.fullName !== 'Dr P.S.N Murthy') {
+              user = { ...user, fullName: 'Dr P.S.N Murthy' };
+              await StorageService.saveUser(user, user.uid);
+            }
             setCurrentUser(user && user.isActive ? user : null);
           } else {
             setCurrentUser(null);
@@ -164,6 +175,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const defaultPrin = createDefaultPrincipal(fbUid);
             await StorageService.saveUser(defaultPrin, fbUid);
             user = defaultPrin;
+          } else if (user && isPrincipal && user.fullName !== 'Dr P.S.N Murthy') {
+            user = { ...user, fullName: 'Dr P.S.N Murthy' };
+            await StorageService.saveUser(user, fbUid);
           }
 
           if (user) {
@@ -196,6 +210,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const defaultPrin = createDefaultPrincipal('user_principal_pradeep');
           await StorageService.saveUser(defaultPrin, 'user_principal_pradeep');
           principalUser = defaultPrin;
+        } else if (principalUser.fullName !== 'Dr P.S.N Murthy') {
+          principalUser = { ...principalUser, fullName: 'Dr P.S.N Murthy' };
+          await StorageService.saveUser(principalUser, principalUser.uid);
         }
 
         setCurrentUser(principalUser);

@@ -103,12 +103,12 @@ export const INITIAL_DEPARTMENTS: Department[] = [
   },
 ];
 
-// Sole authoritative initial user: Principal Pradeep
+// Sole authoritative initial user: Principal Dr P.S.N Murthy
 export const INITIAL_USERS: User[] = [
   {
     uid: 'user_principal_pradeep',
     employeeId: 'GIITS-DIR-001',
-    fullName: 'Dr. Pradeep',
+    fullName: 'Dr P.S.N Murthy',
     email: 'pradeep4045t7@gmail.com',
     role: 'principal',
     departmentId: '',
